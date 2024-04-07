@@ -1,0 +1,23 @@
+services:
+  postgres:
+    build: ./docker
+    container_name: test-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpassword
+
+  localstack:
+    image: localstack/localstack
+    container_name: localstack
+    ports:
+      - "4566:4566"   # Edge port for all services
+      - "4571:4571"   # Elasticsearch service port
+    environment:
+      - SERVICES=secretsmanager,s3,iam
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack-data
+    volumes:
+      - "./localstack-data:/tmp/localstack-data"
