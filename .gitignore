@@ -1,0 +1,8 @@
+.venv/
+.DS_Store
+**/*.pyc
+**/*/__pycache__/
+**/*/client_secret.json
+.mypy_cache/
+.pytest_cache/
+__pycache__/
