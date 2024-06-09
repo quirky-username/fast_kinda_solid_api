@@ -1,0 +1,1 @@
+Arguments to views, services, and repositories compose objects as much as possible instead of passing in individual attributes
