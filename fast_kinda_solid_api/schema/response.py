@@ -4,10 +4,11 @@ from typing import Generic, TypeVar
 
 from pydantic import UUID4, BaseModel, Field
 
-from fast_kinda_solid_api.schema.base import BaseSchema
+from fast_kinda_solid_api.domain.dto import BaseDTO
+from fast_kinda_solid_api.domain.schemas import BaseSchema
 
-TRecord = TypeVar("TRecord", bound=BaseModel)
-TData = TypeVar("TData")
+TRecord = TypeVar("TRecord", bound=BaseDTO)
+TData = TypeVar("TData", bound=BaseSchema)
 
 
 class ResponseStatus(StrEnum):
@@ -16,6 +17,7 @@ class ResponseStatus(StrEnum):
     PROCESSING = "processing"
     INPUT_ERROR = "input_error"
     TRANSIENT_ERROR = "transient_error"
+    NOT_FOUND = "not_found"
 
 
 class PublicErrorResponse(BaseModel):
@@ -43,16 +45,16 @@ class MetaData(BaseModel):
     last_db_time: datetime
 
 
-class BaseResponse(BaseSchema, Generic[TData]):
-    status: str = ResponseStatus.SUCCESS
-    message: str | None = None
+class Response(BaseSchema, Generic[TData]):
     data: TData | None = None
+    message: str | None = None
+    status: str = ResponseStatus.SUCCESS
     pagination: PaginationMeta | None = None
     errors: list[PrivateErrorResponse | PublicErrorResponse] | None = None
     meta: MetaData | None = None
 
 
-class BaseRecordResponse(BaseResponse):
+class BaseRecordResponse(BaseSchema):
     """
     A response model representing a database record. This can be used as a base class or standalone.
 
