@@ -50,6 +50,7 @@ def test_configure_tracing_with_otlp_exporter(setup_tracing):
     assert isinstance(tracer_provider, TracerProvider)
 
 
+@pytest.mark.asyncio
 async def test_trace_context_model(setup_tracing):
     async with TraceContextModel.bind(trace_id="12345", span_id="67890"):
         assert TraceContextModel.trace_id.get() == "12345"
@@ -62,6 +63,7 @@ async def test_trace_context_model(setup_tracing):
         TraceContextModel.span_id.get()
 
 
+@pytest.mark.asyncio
 async def test_trace_function_decorator(setup_tracing):
     @span_function("test_span")
     async def sample_function():
@@ -80,6 +82,7 @@ def test_configure_tracing_with_bad_otlp_protocol(setup_tracing):
         configure_tracing(settings)
 
 
+@pytest.mark.asyncio
 async def test_span_context():
     tracer = trace.get_tracer(__name__)
 
@@ -94,6 +97,7 @@ async def test_span_context():
         TraceContextModel.span_id.get()
 
 
+@pytest.mark.asyncio
 async def test_nested_span_context():
     tracer = trace.get_tracer(__name__)
 
@@ -112,6 +116,7 @@ async def test_nested_span_context():
         TraceContextModel.span_id.get()
 
 
+@pytest.mark.asyncio
 async def test_multithreaded_span_context():
     tracer = trace.get_tracer(__name__)
 

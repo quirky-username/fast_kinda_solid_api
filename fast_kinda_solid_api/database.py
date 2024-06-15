@@ -11,7 +11,7 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm.decl_api import registry
 
 from fast_kinda_solid_api.config import SqlAlchemySettings
-from fast_kinda_solid_api.domain.models import BaseTable
+from fast_kinda_solid_api.data.models import BaseTable
 
 
 class Database:

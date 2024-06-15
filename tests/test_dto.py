@@ -3,12 +3,8 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from fast_kinda_solid_api.domain.dto import (
-    BaseDTO,
-    BaseRecordDTO,
-    BaseUpdateDTO,
-    ConvertibleBaseModel,
-)
+from fast_kinda_solid_api.data.convertible import ConvertibleBaseModel
+from fast_kinda_solid_api.data.dto import BaseDTO, BaseRecordDTO, BaseUpdateDTO
 
 
 # Fixtures
@@ -33,21 +29,6 @@ def sample_nested_dict():
     }
 
 
-def test_base_dto():
-    """
-    Ensure that BaseDTO correctly sets attributes from a dictionary.
-    """
-
-    class TestDTO(BaseDTO):
-        id: str
-        created_at: datetime
-
-    test_dict = {"id": "123", "created_at": datetime.now()}
-    dto = TestDTO.from_dict(test_dict)
-    assert dto.id == "123", "TestDTO should correctly set 'id'."
-    assert dto.created_at == test_dict["created_at"], "TestDTO should correctly set 'created_at'."
-
-
 def test_from_dict_method():
     """
     Ensure that from_dict method correctly sets attributes from a dictionary.
@@ -63,19 +44,30 @@ def test_from_dict_method():
     assert dto.created_at == test_dict["created_at"], "TestDTO should correctly set 'created_at'."
 
 
-def test_from_dict_unset_fields():
+def test_to_dict_unset_fields():
     """
     Ensure that from_dict method correctly handles unset fields.
     """
 
     class TestDTO(BaseDTO):
-        id: str
-        created_at: datetime | None = None
+        not_nullable_no_default: str
+        nullable_with_default_none_set: str | None = "-1"
+        nullable_with_default: str | None = "3"
+        nullable_with_default_none: str | None = None
 
-    test_dict = {"id": "123"}
-    dto = TestDTO.from_dict(test_dict)
-    assert dto.id == "123", "TestDTO should correctly set 'id'."
-    assert dto.created_at is None, "TestDTO should correctly handle unset 'created_at'."
+    dto = TestDTO.from_dict({"not_nullable_no_default": "1"})
+    dto.nullable_with_default_none_set = "2"
+    dto_dict = dto.to_dict(exclude_unset=False)
+    assert dto_dict["not_nullable_no_default"] == "1"
+    assert dto_dict["nullable_with_default_none_set"] == "2"
+    assert dto_dict["nullable_with_default"] == "3"
+    assert dto_dict["nullable_with_default_none"] is None
+
+    dto_dict = dto.to_dict(exclude_unset=True)
+    assert dto_dict["not_nullable_no_default"] == "1"
+    assert dto_dict["nullable_with_default_none_set"] == "2"
+    assert "nullable_with_default" not in dto_dict
+    assert "nullable_with_default_none" not in dto_dict
 
 
 def test_convert_from_method():
@@ -86,12 +78,13 @@ def test_convert_from_method():
     class SourceDTO(BaseDTO):
         id: str
         created_at: datetime
+        extra: str
 
     class TargetDTO(BaseDTO):
         id: str
         created_at: datetime
 
-    source = SourceDTO(id="1", created_at=datetime(2023, 1, 1))
+    source = SourceDTO(id="1", created_at=datetime(2023, 1, 1), extra="extra")
     converted = TargetDTO.convert_from(source, id="2")
     assert converted.id == "2", "Converted DTO should have updated 'id'."
     assert converted.created_at == source.created_at, "Converted DTO should retain 'created_at' from source."

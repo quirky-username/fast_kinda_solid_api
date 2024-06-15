@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import UUID, DateTime, Index, func
+from sqlalchemy import UUID, DateTime, Index, String, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from fast_kinda_solid_api.domain.models import BaseTable
+from fast_kinda_solid_api.data.models import BaseTable
 
 from .db import database
 
@@ -27,3 +27,12 @@ class SampleModel(Base, BaseTable):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
+
+
+class TestBase(Base, BaseTable):
+    __tablename__ = "test_base"
+
+    not_nullable_no_default: Mapped[str]
+    nullable_with_default_none_set: Mapped[str] = mapped_column(String, default="-1", nullable=True)
+    nullable_with_default: Mapped[str] = mapped_column(String, default="3", nullable=True)
+    nullable_with_default_none: Mapped[str] = mapped_column(String, default=None, nullable=True)

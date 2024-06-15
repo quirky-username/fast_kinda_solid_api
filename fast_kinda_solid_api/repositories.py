@@ -9,12 +9,11 @@ from sqlalchemy.orm import DeclarativeBase
 
 from fast_kinda_solid_api.config import RepositorySettings
 from fast_kinda_solid_api.contexts import RepositoryOperationContext
+from fast_kinda_solid_api.data.dto import BaseDTO, BaseRecordDTO, BaseUpdateDTO
+from fast_kinda_solid_api.data.models import BaseTable
 from fast_kinda_solid_api.observability.logs import logger
 from fast_kinda_solid_api.observability.tracing import span_function
-from fast_kinda_solid_api.utils.sqla_helpers.query import select_with_cursor_pagination
-
-from .dto import BaseDTO, BaseRecordDTO, BaseUpdateDTO
-from .models import BaseTable
+from fast_kinda_solid_api.utils.sqla import select_with_cursor_pagination
 
 TCreate = TypeVar("TCreate", bound=BaseDTO)
 TUpdate = TypeVar("TUpdate", bound=BaseUpdateDTO)
@@ -51,6 +50,10 @@ class RepositoryMixin(Generic[TCreate, TUpdate, TRecord], ABC):
         await self.db_session.commit()
         logger.debug("Committed transaction manually")
 
+    async def refresh(self, model: BaseTable):
+        await self.db_session.refresh(model)
+        logger.debug("Refreshed model instance on the session transaction")
+
     @asynccontextmanager
     async def async_nested_transaction(self):
         async with self.db_session.begin_nested() as nested_transaction:
@@ -73,7 +76,7 @@ class RepositoryMixin(Generic[TCreate, TUpdate, TRecord], ABC):
 
     @span_function("bulk_create")
     async def bulk_create(self, objects: list[TCreate]) -> list[TRecord]:
-        models = [self.__model_cls__.convert_from(dto) for dto in objects]
+        models = [self.__model_cls__.convert_from(obj) for obj in objects]
 
         try:
             async with self.async_nested_transaction():

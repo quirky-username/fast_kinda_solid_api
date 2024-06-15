@@ -4,8 +4,8 @@ from typing import Generic, TypeVar
 
 from pydantic import UUID4, BaseModel, Field
 
-from fast_kinda_solid_api.domain.dto import BaseDTO
-from fast_kinda_solid_api.domain.schemas import BaseSchema
+from fast_kinda_solid_api.data.dto import BaseDTO
+from fast_kinda_solid_api.data.schemas import BaseSchema
 
 TRecord = TypeVar("TRecord", bound=BaseDTO)
 TData = TypeVar("TData", bound=BaseSchema)

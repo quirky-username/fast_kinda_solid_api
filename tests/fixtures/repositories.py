@@ -1,10 +1,10 @@
-from fast_kinda_solid_api.domain.repositories import RepositoryMixin
-from tests.fixtures.models import KeysetPaginatableObject
-from tests.fixtures.schemas import (
+from fast_kinda_solid_api.repositories import RepositoryMixin
+from tests.fixtures.dtos import (
     KeysetPaginatableCreate,
     KeysetPaginatableRecord,
     KeysetPaginatableUpdate,
 )
+from tests.fixtures.models import KeysetPaginatableObject
 
 
 class PaginationRepository(RepositoryMixin[KeysetPaginatableCreate, KeysetPaginatableUpdate, KeysetPaginatableRecord]):

@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from datetime import datetime
 from typing import Any, Type, TypeVar
 
 from pydantic import BaseModel, ConfigDict
@@ -16,7 +15,10 @@ class Convertible:
     """
 
     @abstractmethod
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(
+        self,
+        exclude_unset: bool = False,
+    ) -> dict[str, Any]:
         """
         Converts the object to a dictionary representation, which can be used to serialize
         or pass data to other systems.
@@ -41,7 +43,12 @@ class Convertible:
         pass
 
     @classmethod
-    def convert_from(cls: Type[T], source: "Convertible", **values) -> T:
+    def convert_from(
+        cls: Type[T],
+        source: "Convertible",
+        exclude_unset: bool = False,
+        **values,
+    ) -> T:
         """
         Converts from one object type to another using the dictionary representation,
         with an option to override or extend the original properties via additional values.
@@ -53,9 +60,12 @@ class Convertible:
         Returns:
             T: An instance of the class based on the source object's data and additional values.
         """
-        value = source.to_dict()
+        value = source.to_dict(
+            exclude_unset=exclude_unset,
+        )
         value.update(values)
-        return cls.from_dict(value)
+        result: T = cls.from_dict(value)
+        return result
 
     def merge(self, source: "Convertible") -> "Convertible":
         """
@@ -83,7 +93,7 @@ class ConvertibleBaseModel(Convertible, BaseModel):
     )
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "BaseDTO":
+    def from_dict(cls, value: dict[str, Any]) -> "ConvertibleBaseModel":
         """
         Create a model instance based on a dictionary of attributes, filtering only relevant keys.
 
@@ -97,7 +107,10 @@ class ConvertibleBaseModel(Convertible, BaseModel):
         filtered_value = {}
         for key in value.keys():
             if key in cls.model_fields:
-                filtered_value[key] = value[key]
+                if cls.model_fields[key].annotation == str:
+                    filtered_value[key] = str(value[key])
+                else:
+                    filtered_value[key] = value[key]
             else:
                 missing_keys.append(key)
 
@@ -106,47 +119,20 @@ class ConvertibleBaseModel(Convertible, BaseModel):
 
         return cls.model_validate(filtered_value)
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(
+        self,
+        exclude_unset: bool = False,
+    ) -> dict[str, Any]:
         """
-        Serialize the model to a dictionary using model's serialization mechanism.
-
-        Returns:
-            dict[str, Any]: The dictionary representation of the model.
+        Converts the object to a dictionary representation
+        which can be used to serialize or pass data to other data models.
         """
-        return {key: value for key, value in self.model_dump().items() if key in self.model_fields_set}
-
-
-class BaseDTO(ConvertibleBaseModel):
-    """
-    Generic Data Transfer Object (DTO) base class intended to be subclassed for specific use cases.
-    Subclasses typically do not need to implement the interface methods unless custom logic is required.
-    """
-
-    pass
-
-
-class BaseRecordDTO(BaseDTO):
-    """
-    A base DTO for records that typically include identifiers and timestamps for creation, update, and deletion.
-    """
-
-    id: str
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    deleted_at: datetime | None = None
-
-
-class BaseUpdateDTO(BaseDTO):
-    """
-    A base DTO designed for handling updates, including the necessary identifier for the entity being updated.
-    """
-
-    id: str
+        return self.model_dump(
+            exclude_unset=exclude_unset,
+        )
 
 
 __all__ = [
-    "BaseDTO",
+    "Convertible",
     "ConvertibleBaseModel",
-    "BaseRecordDTO",
-    "BaseUpdateDTO",
 ]
