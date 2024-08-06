@@ -7,7 +7,7 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-from fast_kinda_solid_api.services.jwt.jwk import (
+from fast_kinda_solid_api.components.tokens.jwk import (
     ExpiredTokenError,
     JWKServiceSettings,
     JWKValidationService,

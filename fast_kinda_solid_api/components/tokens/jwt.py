@@ -7,9 +7,9 @@ import jwt
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+from fast_kinda_solid_api.components.tokens.jwk import JWKValidationService
+from fast_kinda_solid_api.components.tokens.schemas import JWT
 from fast_kinda_solid_api.core.layers.service import BaseService
-from fast_kinda_solid_api.services.jwt.jwk import JWKValidationService
-from fast_kinda_solid_api.services.jwt.schemas import JWT
 
 
 class EncryptionAlgorithm(StrEnum):

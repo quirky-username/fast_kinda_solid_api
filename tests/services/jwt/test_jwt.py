@@ -3,8 +3,8 @@ from unittest.mock import Mock
 import jwt
 import pytest
 
-from fast_kinda_solid_api.services.jwt.jwk import JWKValidationService
-from fast_kinda_solid_api.services.jwt.jwt import JWTService, JWTServiceSettings
+from fast_kinda_solid_api.components.tokens.jwk import JWKValidationService
+from fast_kinda_solid_api.components.tokens.jwt import JWTService, JWTServiceSettings
 
 # Sample settings for the TokenService
 settings = JWTServiceSettings(

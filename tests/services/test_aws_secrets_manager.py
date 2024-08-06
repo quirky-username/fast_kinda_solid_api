@@ -1,10 +1,10 @@
 import pytest
 
-from fast_kinda_solid_api.services.aws.secrets_manager import (
+from fast_kinda_solid_api.components.aws.secrets_manager import (
     AWSSecretsManagerService,
     AWSSettings,
 )
-from fast_kinda_solid_api.services.base.secrets import SecretNotFoundError
+from fast_kinda_solid_api.components.base.secrets import SecretNotFoundError
 
 settings = AWSSettings(
     REGION="us-east-1",

@@ -1,7 +1,7 @@
 import aioboto3
 import structlog
 
-from fast_kinda_solid_api.services.base.secrets import (
+from fast_kinda_solid_api.components.base.secrets import (
     BaseSecretManagerService,
     SecretNotFoundError,
 )
