@@ -11,10 +11,15 @@ from .convertible import Convertible
 logger = get_logger(__name__)
 
 
-class DbModel(Convertible):
-    __abstract__ = True
+class DbRecord(Convertible):
+    """
+    Base class for database records.
+    """
 
     id: Mapped[str] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    deleted_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     def to_dict(self, exclude_unset: bool = False) -> dict[str, Any]:
         """
@@ -33,7 +38,7 @@ class DbModel(Convertible):
         return data
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "DbModel":
+    def from_dict(cls, value: dict[str, Any]) -> "DbRecord":
         """
         Creates an instance of the class from a dictionary, allowing easy deserialization.
 
@@ -55,13 +60,6 @@ class DbModel(Convertible):
         return cls(**filtered_value)
 
 
-class DbRecord(DbModel):
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
-    deleted_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-
-
 __all__ = [
-    "DbModel",
     "DbRecord",
 ]

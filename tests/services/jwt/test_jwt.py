@@ -4,10 +4,10 @@ import jwt
 import pytest
 
 from fast_kinda_solid_api.services.jwt.jwk import JWKValidationService
-from fast_kinda_solid_api.services.jwt.jwt import JWTService, TokenServiceSettings
+from fast_kinda_solid_api.services.jwt.jwt import JWTService, JWTServiceSettings
 
 # Sample settings for the TokenService
-settings = TokenServiceSettings(
+settings = JWTServiceSettings(
     secret_name="my_secret",
     algorithm="HS256",
     access_token_expiry_minutes=10,
@@ -84,16 +84,14 @@ async def test_decode_token(jwt_service: JWTService):
     token = jwt_service.create_id_token(user_id, user_info)
     jwk_validation_service.validate_id_token.return_value = True  # Mock validation
 
-    decoded = await jwt_service.decode_token(
-        token, audience=settings.id_token_audience
-    )  # TODO: remove audience and figure out why it's failing
+    decoded = await jwt_service.decode_token(token)
 
     assert decoded.iss == settings.issuer
     assert decoded.sub == user_id
     assert decoded.aud == settings.id_token_audience
     assert decoded.name == user_info["name"]
     assert decoded.email == user_info["email"]
-    assert "exp" in decoded
-    assert "nbf" in decoded
-    assert "iat" in decoded
-    assert "jti" in decoded
+    assert decoded.exp is not None
+    assert decoded.nbf is not None
+    assert decoded.iat is not None
+    assert decoded.jti is not None

@@ -1,5 +1,5 @@
 from datetime import UTC, datetime, timedelta
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Literal
 
 import httpx
 import jwt
@@ -11,6 +11,10 @@ from jwt.algorithms import (
     OKPAlgorithm,
     RSAAlgorithm,
 )
+from pydantic import Field
+from pydantic_settings import BaseSettings
+
+from fast_kinda_solid_api.core.layers.service import BaseService
 
 
 class UnsupportedAlgorithmError(Exception):
@@ -29,16 +33,42 @@ class TokenValidationError(Exception):
     pass
 
 
-class JWKValidationService:
-    def __init__(self, jwks_uris: Dict[str, str], refresh_interval: Optional[timedelta] = None):
-        self.jwks_uris = jwks_uris
-        self.refresh_interval = refresh_interval or timedelta(hours=24)
+class JWKServiceSettings(BaseSettings):
+    """
+    Settings for the JWK service to use for fetching and validating JWKs.
+    """
+
+    jwks_uris: Dict[str, str] = Field(
+        ...,
+        description="The URIs of the JWKS endpoints for each issuer.",
+    )
+    refresh_interval: timedelta = Field(
+        timedelta(hours=24),
+        description="The interval at which to refresh the JWKS cache.",
+    )
+
+
+class JWKValidationService(BaseService):
+    """
+    A service for validating JWTs using JWKs.
+    """
+
+    settings: JWKServiceSettings
+
+    def __init__(self, settings: JWKServiceSettings):
+        """
+        Initialize the JWK validation service.
+
+        Args:
+            settings (JWKServiceSettings): The settings to use for the service.
+        """
+        super().__init__(settings)
         self._jwks_cache: dict[str, dict[str, Any]] = {}
         self._last_refresh_time: dict[str, datetime] = {}
 
     async def _fetch_jwks(self, issuer: str):
         async with httpx.AsyncClient() as client:
-            response = await client.get(self.jwks_uris[issuer])
+            response = await client.get(self.settings.jwks_uris[issuer])
             if response.status_code != 200:
                 raise HTTPException(status_code=response.status_code, detail="Failed to fetch JWKS")
             self._jwks_cache[issuer] = response.json()
@@ -47,7 +77,7 @@ class JWKValidationService:
     def _should_refresh(self, issuer: str) -> bool:
         if issuer not in self._last_refresh_time:
             return True
-        return datetime.now(UTC) - self._last_refresh_time[issuer] > self.refresh_interval
+        return datetime.now(UTC) - self._last_refresh_time[issuer] > self.settings.refresh_interval
 
     async def _get_public_key(self, kid: Literal["RSA", "EC", "oct", "OKP"], issuer: str) -> Algorithm:
         if self._should_refresh(issuer):
@@ -80,7 +110,8 @@ class JWKValidationService:
             Dict[str, Any]: The decoded token if validation is successful.
 
         Raises:
-            TokenValidationError: If the token is expired or invalid.
+            ExpiredTokenError: If the token has expired.
+            TokenValidationError: If the token is invalid
         """
         unverified_header = jwt.get_unverified_header(id_token)
         public_key = await self._get_public_key(unverified_header["kid"], issuer)

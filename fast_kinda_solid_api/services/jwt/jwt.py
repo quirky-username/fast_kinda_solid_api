@@ -1,46 +1,68 @@
 import uuid
 from datetime import UTC, datetime, timedelta
+from enum import StrEnum
 from typing import List
 
 import jwt
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
+from fast_kinda_solid_api.core.layers.service import BaseService
 from fast_kinda_solid_api.services.jwt.jwk import JWKValidationService
 from fast_kinda_solid_api.services.jwt.schemas import JWT
 
 
-class TokenServiceSettings(BaseSettings):
-    secret_name: str
-    algorithm: str = "HS256"
-    access_token_expiry_minutes: int = 10
-    id_token_expiry_minutes: int = 10
-    issuer: str
-    access_token_audience: str
-    id_token_audience: str
+class EncryptionAlgorithm(StrEnum):
+    """
+    Enumeration of supported encryption algorithms.
+    """
+
+    RS256 = "RS256"
+    ES256 = "ES256"
+    HS256 = "HS256"
+    EdDSA = "EdDSA"
 
 
-class JWTService:
+class JWTServiceSettings(BaseSettings):
+    """
+    Settings for the JWT service to use for creating and decoding tokens.
+    """
+
+    secret_name: str = Field(..., description="The name of the secret to use for encoding and decoding JWTs.")
+    algorithm: EncryptionAlgorithm = Field(
+        EncryptionAlgorithm.HS256,
+        description="The algorithm to use for encoding and decoding JWTs.",
+    )
+    access_token_expiry_minutes: int = Field(10, description="The number of minutes until the access token expires.")
+    id_token_expiry_minutes: int = Field(10, description="The number of minutes until the ID token expires.")
+    issuer: str = Field(..., description="The issuer to use for the JWTs. This should be the API URL.")
+    access_token_audience: str = Field(..., description="The audience for access tokens. This should be the API URL.")
+    id_token_audience: str = Field(..., description="The audience for ID tokens. This should be the client ID.")
+
+
+class JWTService(BaseService):
     """
     A service for creating and decoding JWTs for authentication and authorization.
     """
 
-    def __init__(self, settings: TokenServiceSettings, secret_key: str, jwk_validation_service: JWKValidationService):
+    settings: JWTServiceSettings
+
+    def __init__(self, settings: JWTServiceSettings, secret_key: str, jwk_validation_service: JWKValidationService):
         """
         Initialize the JWT service.
 
         Args:
-            settings (TokenServiceSettings): The settings for the JWT service.
+            settings (TokenServiceSettings): The settings to use for the service.
             secret_key (str): The secret key to use for encoding and decoding JWTs.
             jwk_validation_service (JWKValidationService): The service to use for validating JWKs.
         """
-        self.settings = settings
-        self.secret_key = secret_key
-        self.jwk_validation_service = jwk_validation_service
+        super().__init__(settings)
+        self._secret_key = secret_key
+        self._jwk_validation_service = jwk_validation_service
 
     def _create_token(self, user_id: str, audience: str, expiry_minutes: int, **additional_claims) -> str:
         now = datetime.now(UTC)
         expiration = now + timedelta(minutes=expiry_minutes)
-
         payload = JWT(
             iss=self.settings.issuer,
             sub=user_id,
@@ -52,7 +74,7 @@ class JWTService:
             **additional_claims,
         )
 
-        token = jwt.encode(payload.model_dump(), self.secret_key, algorithm=self.settings.algorithm)
+        token = jwt.encode(payload.model_dump(), self._secret_key, algorithm=self.settings.algorithm)
 
         return token
 
@@ -102,10 +124,28 @@ class JWTService:
 
         Returns:
             JWT: The decoded token.
+
+        Raises:
+            ExpiredTokenError: If the token has expired.
+            TokenValidationError: If the token is invalid
         """
-        await self.jwk_validation_service.validate_id_token(
+        await self._jwk_validation_service.validate_id_token(
             token, self.settings.id_token_audience, self.settings.issuer
         )
 
-        decoded = jwt.decode(token, self.secret_key, algorithms=[self.settings.algorithm])
+        decoded = jwt.decode(
+            token,
+            self._secret_key,
+            algorithms=[self.settings.algorithm],
+            audience=self.settings.id_token_audience,
+            issuer=self.settings.issuer,
+        )
+
         return JWT(**decoded)
+
+
+__all__ = [
+    "JWTService",
+    "JWTServiceSettings",
+    "EncryptionAlgorithm",
+]

@@ -32,7 +32,7 @@ from fast_kinda_solid_api.core.data.dto import (
     Operator,
     RecordSet,
 )
-from fast_kinda_solid_api.core.data.model import DbModel, DbRecord
+from fast_kinda_solid_api.core.data.model import DbRecord
 from fast_kinda_solid_api.core.observability.context import RepositoryOperationContext
 from fast_kinda_solid_api.core.observability.tracing import span_function
 
@@ -96,7 +96,7 @@ class BaseRepository(Generic[TRecord], ABC):
         await self.db_session.commit()
         logger.debug("Committed transaction to the database")
 
-    async def refresh(self, model: DbModel):
+    async def refresh(self, model: DbRecord):
         """
         Refresh the model attributes from the database.
         """

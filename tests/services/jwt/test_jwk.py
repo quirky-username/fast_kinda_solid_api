@@ -9,6 +9,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from fast_kinda_solid_api.services.jwt.jwk import (
     ExpiredTokenError,
+    JWKServiceSettings,
     JWKValidationService,
     TokenValidationError,
 )
@@ -46,7 +47,8 @@ def jwks_uri():
 
 @pytest.fixture
 def jwks_service(jwks_uri):
-    return JWKValidationService(jwks_uris={"example": jwks_uri})
+    settings = JWKServiceSettings(jwks_uris={"example": jwks_uri}, refresh_interval=timedelta(hours=1))
+    return JWKValidationService(settings)
 
 
 def base64url_encode(data):

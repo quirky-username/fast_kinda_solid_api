@@ -140,7 +140,7 @@ class DependencyProvider(ABC):
             dep.state = DependencyState.SHUTDOWN
 
 
-[
+__all__ = [
     "DependencyProvider",
     "DependencyState",
 ]
